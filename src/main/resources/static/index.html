@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Todo MCP Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body class="bg-[#f8f9fc] text-[#1e293b] flex flex-col h-screen font-sans">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-[#e2e8f0] px-6 py-4 flex items-center justify-between shadow-xs">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-[#5352ed] flex items-center justify-center text-white font-bold shadow-md shadow-[#5352ed]/20">
+        <i class="fa-solid fa-list-check"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold tracking-tight text-[#0f172a]">Todo MCP Assistant</h1>
+        <p class="text-xs text-[#64748b]">Powered by Spring Boot & Spring AI</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 text-xs font-medium text-[#5352ed] bg-[#eeedfc] px-3 py-1.5 rounded-full border border-[#5352ed]/20">
+      <span class="w-2 h-2 rounded-full bg-[#5352ed] animate-pulse"></span>
+      MCP Server Online
+    </div>
+  </header>
+
+  <!-- Chat Log Container -->
+  <main id="chatLog" class="flex-1 overflow-y-auto px-4 py-6 md:px-20 lg:px-64 space-y-4">
+    <!-- Default Welcome Message -->
+    <div class="flex items-start gap-3">
+      <div class="w-8 h-8 rounded-full bg-[#eeedfc] text-[#5352ed] border border-[#5352ed]/20 flex items-center justify-center text-xs shrink-0 mt-1 shadow-xs">
+        <i class="fa-solid fa-robot"></i>
+      </div>
+      <div class="bg-white border border-[#e2e8f0] text-[#334155] px-5 py-3.5 rounded-2xl max-w-xl text-sm leading-relaxed shadow-xs">
+        Hi! I'm connected to your Spring Boot Todo MCP Server. You can ask me to:
+        <ul class="list-disc ml-5 mt-2 space-y-1 text-[#64748b]">
+          <li><em>"Add a task to prepare interview notes"</em></li>
+          <li><em>"Show me all my tasks"</em></li>
+          <li><em>"Mark task 1 as completed"</em></li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <!-- Input Area -->
+  <footer class="bg-white border-t border-[#e2e8f0] p-4 md:px-20 lg:px-64">
+    <form id="chatForm" class="relative flex items-center">
+      <input
+        type="text"
+        id="userInput"
+        autocomplete="off"
+        placeholder="Type a command or task in natural language..."
+        class="w-full bg-[#f8f9fc] border border-[#e2e8f0] rounded-xl px-4 py-3.5 pr-14 text-sm text-[#0f172a] placeholder-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#5352ed] focus:border-transparent transition-all shadow-2xs"
+      />
+      <button
+        type="submit"
+        id="sendBtn"
+        class="absolute right-2.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg bg-[#5352ed] hover:bg-[#3735c9] text-white flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-[#5352ed]/25"
+      >
+        <i class="fa-solid fa-arrow-up text-sm"></i>
+      </button>
+    </form>
+  </footer>
+
+  <script>
+    const chatLog = document.getElementById('chatLog');
+    const chatForm = document.getElementById('chatForm');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    function appendMessage(sender, text) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'flex items-start gap-3 ' + (sender === 'user' ? 'justify-end' : '');
+
+      const avatar = document.createElement('div');
+      avatar.className = `w-8 h-8 rounded-full flex items-center justify-center text-xs shrink-0 mt-1 shadow-xs ${
+        sender === 'user' 
+          ? 'bg-[#5352ed] text-white order-2' 
+          : 'bg-[#eeedfc] text-[#5352ed] border border-[#5352ed]/20 order-1'
+      }`;
+      avatar.innerHTML = sender === 'user' 
+        ? '<i class="fa-solid fa-user"></i>' 
+        : '<i class="fa-solid fa-robot"></i>';
+
+      const bubble = document.createElement('div');
+      bubble.className = `${
+        sender === 'user'
+          ? 'bg-[#5352ed] text-white order-1 shadow-sm'
+          : 'bg-white border border-[#e2e8f0] text-[#334155] order-2 shadow-xs'
+      } px-5 py-3.5 rounded-2xl max-w-xl text-sm leading-relaxed whitespace-pre-wrap`;
+      bubble.textContent = text;
+
+      wrapper.appendChild(avatar);
+      wrapper.appendChild(bubble);
+      chatLog.appendChild(wrapper);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    function appendLoadingIndicator() {
+      const wrapper = document.createElement('div');
+      wrapper.id = 'loadingIndicator';
+      wrapper.className = 'flex items-start gap-3';
+      wrapper.innerHTML = `
+        <div class="w-8 h-8 rounded-full bg-[#eeedfc] text-[#5352ed] border border-[#5352ed]/20 flex items-center justify-center text-xs shrink-0 mt-1 shadow-xs">
+          <i class="fa-solid fa-robot"></i>
+        </div>
+        <div class="bg-white border border-[#e2e8f0] px-4 py-3 rounded-2xl flex items-center gap-1.5 shadow-xs">
+          <span class="w-2 h-2 bg-[#5352ed] rounded-full animate-bounce"></span>
+          <span class="w-2 h-2 bg-[#5352ed] rounded-full animate-bounce [animation-delay:0.2s]"></span>
+          <span class="w-2 h-2 bg-[#5352ed] rounded-full animate-bounce [animation-delay:0.4s]"></span>
+        </div>
+      `;
+      chatLog.appendChild(wrapper);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    function removeLoadingIndicator() {
+      const loader = document.getElementById('loadingIndicator');
+      if (loader) loader.remove();
+    }
+
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = userInput.value.trim();
+      if (!message) return;
+
+      appendMessage('user', message);
+      userInput.value = '';
+      sendBtn.disabled = true;
+      appendLoadingIndicator();
+
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: message })
+        });
+
+        if (!response.ok) {
+          throw new Error('Server returned ' + response.status);
+        }
+
+        const data = await response.json();
+        removeLoadingIndicator();
+        appendMessage('bot', data.reply || 'No response returned from server.');
+      } catch (err) {
+        removeLoadingIndicator();
+        appendMessage('bot', '⚠️ Error: Failed to reach backend service (' + err.message + ')');
+      } finally {
+        sendBtn.disabled = false;
+        userInput.focus();
+      }
+    });
+  </script>
+</body>
+</html>
